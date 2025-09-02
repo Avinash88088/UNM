@@ -1,153 +1,231 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const { createServer } = require('http');
-const { Server } = require('socket.io');
-require('dotenv').config();
+const compression = require('compression');
+const morgan = require('morgan');
+const path = require('path');
 
-const logger = require('./utils/logger');
-const connectDB = require('./database/connection');
-const connectRedis = require('./database/redis');
-const setupSocketIO = require('./socket/socket');
+// Import middleware
 const errorHandler = require('./middleware/errorHandler');
-const notFound = require('./middleware/notFound');
+const { handleUploadError } = require('./middleware/upload');
 
 // Import routes
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const aiRoutes = require('./routes/ai');
-const questionRoutes = require('./routes/questions');
-const batchRoutes = require('./routes/batch');
-const userRoutes = require('./routes/users');
-const adminRoutes = require('./routes/admin');
+
+// Import services
+const { initializeDatabase } = require('./database/connection');
+const { initializeRedis } = require('./database/redis');
+const logger = require('./utils/logger');
+
+// Import Socket.io
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const server = createServer(app);
 
-// Socket.io setup
+// Initialize Socket.io
 const io = new Server(server, {
-    cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:50000",
-        methods: ["GET", "POST", "PUT", "DELETE"]
-    }
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
 });
 
-// Middleware
-app.use(helmet());
-app.use(compression());
-app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:50000",
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-    message: {
-        error: 'Too many requests from this IP, please try again later.'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use('/api/', limiter);
 
+// More strict rate limiting for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many authentication attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth/', authLimiter);
+
+// Compression middleware
+app.use(compression());
+
 // Body parsing middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
+
+// Static file serving
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV,
-        version: '1.0.0'
-    });
+  res.json({
+    success: true,
+    message: 'AI Document Master API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0'
+  });
 });
 
 // API routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/documents', documentRoutes);
-app.use('/api/v1/ai', aiRoutes);
-app.use('/api/v1/questions', questionRoutes);
-app.use('/api/v1/batch', batchRoutes);
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/ai', aiRoutes);
 
-// Swagger documentation
-if (process.env.NODE_ENV === 'development') {
-    const swaggerJsdoc = require('swagger-jsdoc');
-    const swaggerUi = require('swagger-ui-express');
-    
-    const options = {
-        definition: {
-            openapi: '3.0.0',
-            info: {
-                title: 'AI Document Master API',
-                version: '1.0.0',
-                description: 'Backend API for AI Document Master application',
-            },
-            servers: [
-                {
-                    url: `http://localhost:${process.env.PORT || 3000}/api/v1`,
-                    description: 'Development server',
-                },
-            ],
-        },
-        apis: ['./src/routes/*.js'],
-    };
-    
-    const specs = swaggerJsdoc(options);
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-}
+// Handle upload errors
+app.use(handleUploadError);
 
-// Error handling middleware
-app.use(notFound);
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  });
+});
+
+// Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Setup Socket.io
-setupSocketIO(io);
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  logger.info(`Socket connected: ${socket.id}`);
 
-// Database connection
-connectDB();
-connectRedis();
+  // Join user's personal room
+  socket.on('join-user-room', (data) => {
+    if (data.userId) {
+      socket.join(`user-${data.userId}`);
+      logger.info(`User ${data.userId} joined personal room`);
+    }
+  });
 
-const PORT = process.env.PORT || 3000;
+  // Join document room
+  socket.on('join-document', (data) => {
+    if (data.documentId) {
+      socket.join(`document-${data.documentId}`);
+      logger.info(`Socket ${socket.id} joined document room: ${data.documentId}`);
+    }
+  });
 
-server.listen(PORT, () => {
-    logger.info(`🚀 Server running on port ${PORT}`);
-    logger.info(`📚 Environment: ${process.env.NODE_ENV}`);
-    logger.info(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:50000'}`);
-    logger.info(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
-    logger.info(`💚 Health Check: http://localhost:${PORT}/health`);
+  // Leave document room
+  socket.on('leave-document', (data) => {
+    if (data.documentId) {
+      socket.leave(`document-${data.documentId}`);
+      logger.info(`Socket ${socket.id} left document room: ${data.documentId}`);
+    }
+  });
+
+  // Handle document processing updates
+  socket.on('request-document-status', (data) => {
+    // This would typically query the database and emit back
+    socket.emit('processing-update', {
+      documentId: data.documentId,
+      status: 'processing',
+      progress: 50
+    });
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    logger.info(`Socket disconnected: ${socket.id}`);
+  });
+
+  // Handle errors
+  socket.on('error', (error) => {
+    logger.error(`Socket error: ${error.message}`);
+  });
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM received, shutting down gracefully');
-    server.close(() => {
-        logger.info('Process terminated');
-        process.exit(0);
-    });
-});
+const gracefulShutdown = (signal) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
+  
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
 
-process.on('SIGINT', () => {
-    logger.info('SIGINT received, shutting down gracefully');
-    server.close(() => {
-        logger.info('Process terminated');
-        process.exit(0);
-    });
-});
+  // Force close after 30 seconds
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 30000);
+};
 
-module.exports = app;
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Initialize services and start server
+const startServer = async () => {
+  try {
+    // Initialize database
+    await initializeDatabase();
+    logger.info('Database connected successfully');
+
+    // Initialize Redis
+    await initializeRedis();
+    logger.info('Redis connected successfully');
+
+    // Start server
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      logger.info(`🚀 AI Document Master API server running on port ${PORT}`);
+      logger.info(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
+      logger.info(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+    });
+
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();
+
+module.exports = { app, server, io };

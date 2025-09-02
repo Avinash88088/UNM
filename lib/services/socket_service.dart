@@ -284,7 +284,7 @@ class SocketService {
 
   // Send heartbeat to keep connection alive
   void sendHeartbeat() {
-    if (_isReady) {
+    if (isReady) {
       _socket!.emit('heartbeat', {
         'timestamp': DateTime.now().toIso8601String(),
       });
@@ -293,7 +293,7 @@ class SocketService {
 
   // Start heartbeat timer
   Timer? _heartbeatTimer;
-  void startHeartbeat({Duration interval = Duration(seconds: 30)}) {
+  void startHeartbeat({Duration interval = const Duration(seconds: 30)}) {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(interval, (_) {
       sendHeartbeat();

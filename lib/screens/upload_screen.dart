@@ -422,7 +422,7 @@ class _UploadScreenState extends State<UploadScreen> {
     required String label,
     required String value,
     required List<String> items,
-    required ValueChanged<String> onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
     return Row(
       children: [

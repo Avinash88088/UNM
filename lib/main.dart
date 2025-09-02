@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/upload_screen.dart';
-import 'screens/document_viewer_screen.dart';
-import 'screens/question_generator_screen.dart';
-import 'screens/batch_management_screen.dart';
-import 'screens/admin_console_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'providers/app_provider.dart';
+import 'screens/auth/login_screen.dart';
 import 'utils/app_theme.dart';
-import 'utils/constants.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+    debugPrint('✅ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Firebase initialization failed: $e');
+  }
+  
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
   runApp(const AIDocumentMasterApp());
 }
 
@@ -23,21 +30,16 @@ class AIDocumentMasterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AI Document Master',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      initialRoute: AppRoutes.dashboard,
-      routes: {
-        AppRoutes.dashboard: (context) => const DashboardScreen(),
-        AppRoutes.upload: (context) => const UploadScreen(),
-        AppRoutes.documentViewer: (context) => const DocumentViewerScreen(),
-        AppRoutes.questionGenerator: (context) => const QuestionGeneratorScreen(),
-        AppRoutes.batchManagement: (context) => const BatchManagementScreen(),
-        AppRoutes.adminConsole: (context) => const AdminConsoleScreen(),
-      },
+    return ChangeNotifierProvider(
+      create: (context) => AppProvider(),
+      child: MaterialApp(
+        title: 'AI Document Master',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        home: const LoginScreen(),
+      ),
     );
   }
 }

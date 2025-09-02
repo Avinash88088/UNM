@@ -4,6 +4,11 @@ class AppRoutes {
   static const String documentViewer = '/document-viewer';
   static const String questionGenerator = '/question-generator';
   static const String batchManagement = '/batch-management';
+  static const String batchProcessing = '/batch-processing';
+  static const String imageEditor = '/image-editor';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String forgotPassword = '/forgot-password';
   static const String adminConsole = '/admin-console';
 }
 

@@ -40,6 +40,43 @@ class AppTheme {
   static const Color darkTextPrimaryColor = Color(0xFFFFFFFF);
   static const Color darkTextSecondaryColor = Color(0xFFB3B3B3);
 
+  // Text Style Getters
+  static TextStyle get headlineLarge => const TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor,
+  );
+
+  static TextStyle get headlineMedium => const TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor,
+  );
+
+  static TextStyle get bodyLarge => const TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.normal,
+    color: textPrimaryColor,
+  );
+
+  static TextStyle get bodyMedium => const TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: textPrimaryColor,
+  );
+
+  static TextStyle get bodySmall => const TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.normal,
+    color: textSecondaryColor,
+  );
+
+  static TextStyle get titleLarge => const TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor,
+  );
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

@@ -1,14 +1,15 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Google Services plugin for Firebase is applied conditionally below
 }
 
 android {
     namespace = "com.example.udm"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -23,8 +24,8 @@ android {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.udm"
         // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+         // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -37,6 +38,14 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+// Apply Google Services plugin only if google-services.json exists
+val googleServicesFile = file("src/google-services.json").takeIf { it.exists() }
+    ?: file("google-services.json").takeIf { it.exists() }
+
+if (googleServicesFile != null) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 flutter {
