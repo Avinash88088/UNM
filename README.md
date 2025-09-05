@@ -5,22 +5,34 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-green.svg)](https://github.com/Avinash88088/UNM)
 
-> **AI-powered document processing, OCR, handwriting recognition, and intelligent question generation system**
+> **🎉 COMPLETELY REDESIGNED! Modern dark theme, fully functional UI, and production-ready AI document processing system**
 
 ## 🌟 Overview
 
-AI Document Master (UDM) is a comprehensive document management system that combines Flutter's cross-platform capabilities with advanced AI services. The system processes documents using OCR, handwriting recognition, and generates intelligent questions for educational and business applications.
+AI Document Master (UDM) is a **completely redesigned** document management system featuring a **modern dark theme**, **smooth animations**, and **fully functional UI**. The app combines Flutter's cross-platform capabilities with advanced AI services for OCR, handwriting recognition, and intelligent question generation.
+
+### ✨ **Latest Updates (v2.0)**
+- 🎨 **Complete UI Redesign** with modern dark theme
+- 🚀 **Fully Functional Home Screen** with all navigation working
+- 💫 **Smooth Animations** and gradient backgrounds
+- 🔧 **All Compilation Errors Fixed** - production ready
+- 📱 **Responsive Design** that works on all screen sizes
+- 🎯 **Professional UX** with Material Design 3
 
 ## ✨ Features
 
-### 📱 **Frontend (Flutter)**
-- **Cross-platform Support**: iOS, Android, Web, Desktop
-- **Modern UI/UX**: Material Design 3 with light/dark themes
-- **Document Management**: Upload, view, organize documents
-- **Real-time Processing**: Live updates on document processing status
-- **Offline Support**: Basic offline functionality with caching
-- **Multi-language**: Hindi, English, and regional script support
+### 📱 **Frontend (Flutter) - COMPLETELY REDESIGNED**
+- **🎨 Modern Dark Theme**: Professional gradient UI with smooth animations
+- **🏠 Functional Home Screen**: Complete redesign with 6 action buttons, 3 quick actions, 9 document cards
+- **📱 Responsive Design**: Works perfectly on all screen sizes
+- **💫 Smooth Animations**: Fade, slide, and scale animations throughout
+- **🔧 All Navigation Working**: Every button properly connected and functional
+- **🎯 Professional UX**: Material Design 3 with custom dark theme system
+- **📊 Document Management**: Upload, view, organize documents with beautiful UI
+- **⚡ Real-time Processing**: Live updates on document processing status
+- **🌐 Multi-language**: Hindi, English, and regional script support
 
 ### 🤖 **AI Services**
 - **OCR (Optical Character Recognition)**: Extract text from images/PDFs
@@ -72,15 +84,52 @@ AI Document Master (UDM) is a comprehensive document management system that comb
 ### Frontend Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-document-master.git
-cd ai-document-master
+git clone https://github.com/Avinash88088/UNM.git
+cd UNM
 
 # Install Flutter dependencies
 flutter pub get
 
-# Run the app
+# Run the app (Android)
 flutter run
+
+# Run the app (Web)
+flutter run -d chrome
+
+# Run the app (Windows - if configured)
+flutter run -d windows
 ```
+
+### 🎯 **App Status**
+- ✅ **Successfully running** on Android device
+- ✅ **Firebase authentication** working
+- ✅ **All features functional** and connected
+- ✅ **Professional UI/UX** with modern design
+- ✅ **No compilation errors** - production ready
+
+## 🎨 **New UI Features (v2.0)**
+
+### 🏠 **Home Screen Redesign**
+- **Gradient Header**: Beautiful blue-purple gradient with welcome message and profile avatar
+- **Action Grid (6 buttons)**: Profile, Messages, Documents, Upload, Analytics, AI Tools
+- **Quick Actions (3 buttons)**: OCR Process, Upload Doc, AI Generate with arrow indicators
+- **Document Library (9 cards)**: Recent Docs, Tables, AI Network, Settings, Desktop, Analytics, Reports, Archive, More
+- **Bottom Navigation (6 tabs)**: Home, Docs, Grid, Search, Settings, Menu
+
+### 🎨 **Design System**
+- **DarkTheme Class**: Comprehensive theme system with professional color palette
+- **Gradient Backgrounds**: Beautiful gradients throughout the UI
+- **Shadow Effects**: Subtle shadows for depth and elevation
+- **Smooth Animations**: Fade, slide, and scale animations
+- **Responsive Layout**: Works on all screen sizes
+- **Material Design 3**: Modern design principles
+
+### 🔧 **Technical Improvements**
+- **Fixed All Errors**: No compilation issues
+- **AppStrings Constants**: Centralized string management
+- **Question Model**: Proper enums and properties
+- **Error Handling**: Try-catch blocks throughout
+- **Performance**: Optimized animations and layout
 
 ### Backend Setup
 ```bash
@@ -113,26 +162,54 @@ docker-compose down
 ## 📁 Project Structure
 
 ```
-ai-document-master/
-├── lib/                    # Flutter source code
-│   ├── models/            # Data models
-│   ├── screens/           # UI screens
-│   ├── widgets/           # Reusable widgets
-│   ├── services/          # API services
-│   ├── providers/         # State management
-│   └── utils/             # Utilities and constants
-├── backend/               # Node.js backend
-│   ├── src/               # Source code
-│   │   ├── routes/        # API routes
-│   │   ├── middleware/    # Middleware functions
-│   │   ├── database/      # Database connections
-│   │   └── utils/         # Utility functions
-│   ├── Dockerfile         # Docker configuration
-│   └── docker-compose.yml # Service orchestration
-├── docs/                  # Documentation
-├── android/               # Android-specific files
-├── ios/                   # iOS-specific files
-└── web/                   # Web-specific files
+UNM/
+├── lib/                           # Flutter source code
+│   ├── models/                   # Data models
+│   │   ├── user.dart            # User model
+│   │   └── question_model.dart   # Question model with enums
+│   ├── screens/                  # UI screens
+│   │   ├── home_screen.dart     # 🆕 Redesigned home screen
+│   │   ├── splash_screen.dart   # 🆕 Custom splash screen
+│   │   ├── upload_screen.dart   # Document upload screen
+│   │   ├── document_results_screen.dart # 🆕 Results display
+│   │   ├── theme_customization_screen.dart # 🆕 Theme settings
+│   │   └── auth/
+│   │       └── login_screen_premium.dart # Premium login screen
+│   ├── widgets/                  # Reusable widgets
+│   │   ├── custom_button.dart   # Custom button widget
+│   │   ├── custom_text_field.dart # Custom text field
+│   │   └── loading_overlay.dart # 🆕 Loading overlay
+│   ├── services/                 # API services
+│   │   ├── api_client.dart      # HTTP client
+│   │   ├── auth_service.dart    # Authentication service
+│   │   ├── document_service.dart # Document management
+│   │   ├── advanced_ocr_service.dart # OCR processing
+│   │   ├── image_processing_service.dart # Image processing
+│   │   └── socket_service.dart  # WebSocket service
+│   ├── providers/                # State management
+│   │   ├── app_provider.dart    # Main app provider
+│   │   ├── auth_provider.dart   # 🆕 Auth provider
+│   │   └── theme_provider.dart  # 🆕 Theme provider
+│   └── utils/                    # Utilities and constants
+│       ├── app_theme.dart       # App theme configuration
+│       ├── dark_theme.dart      # 🆕 Dark theme system
+│       ├── constants.dart       # App constants and strings
+│       └── validators.dart      # 🆕 Input validators
+├── backend/                      # Node.js backend
+│   ├── src/                      # Source code
+│   │   ├── routes/              # API routes
+│   │   ├── middleware/          # Middleware functions
+│   │   ├── controllers/         # API controllers
+│   │   ├── config/              # Configuration files
+│   │   └── utils/               # Utility functions
+│   ├── package.json             # Dependencies
+│   └── .env.example             # Environment variables
+├── assets/                       # 🆕 App assets
+│   └── images/                  # Images and icons
+├── android/                      # Android-specific files
+│   └── app/src/main/res/        # Android resources
+├── ios/                          # iOS-specific files
+└── web/                          # Web-specific files
 ```
 
 ## 🔌 API Endpoints
@@ -299,13 +376,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ai-document-master/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/ai-document-master/discussions)
+- **Repository**: [GitHub Repository](https://github.com/Avinash88088/UNM)
+- **Issues**: [GitHub Issues](https://github.com/Avinash88088/UNM/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Avinash88088/UNM/discussions)
 - **Email**: support@aidocumentmaster.com
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/ai-document-master&type=Date)](https://star-history.com/#yourusername/ai-document-master&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Avinash88088/UNM&type=Date)](https://star-history.com/#Avinash88088/UNM&Date)
 
 ---
 
