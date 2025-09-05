@@ -1,82 +1,153 @@
 import 'package:flutter/material.dart';
-import '../utils/app_theme.dart';
+import '../utils/constants.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final bool isOutlined;
+  final bool isText;
   final Color? backgroundColor;
   final Color? textColor;
+  final Color? borderColor;
   final double? width;
-  final double height;
-  final double borderRadius;
-  final EdgeInsetsGeometry? padding;
-  final Widget? icon;
-  final bool isOutlined;
+  final double? height;
+  final double? borderRadius;
+  final EdgeInsets? padding;
+  final IconData? icon;
+  final bool iconTrailing;
+  final bool fullWidth;
+  final bool disabled;
+  final String? tooltip;
 
   const CustomButton({
-    super.key,
+    Key? key,
     required this.text,
     this.onPressed,
     this.isLoading = false,
+    this.isOutlined = false,
+    this.isText = false,
     this.backgroundColor,
     this.textColor,
+    this.borderColor,
     this.width,
-    this.height = 56,
-    this.borderRadius = 12,
+    this.height,
+    this.borderRadius,
     this.padding,
     this.icon,
-    this.isOutlined = false,
-  });
+    this.iconTrailing = false,
+    this.fullWidth = false,
+    this.disabled = false,
+    this.tooltip,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBackgroundColor = backgroundColor ?? AppTheme.primaryColor;
-    final effectiveTextColor = textColor ?? Colors.white;
-
-    if (isOutlined) {
-      return SizedBox(
-        width: width,
-        height: height,
-        child: OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(
-              color: effectiveBackgroundColor,
-              width: 2,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
-            ),
-            padding: padding ?? const EdgeInsets.symmetric(horizontal: 24),
-          ),
-          child: _buildButtonContent(effectiveTextColor),
-        ),
+    final isDisabled = disabled || onPressed == null || isLoading;
+    
+    Widget button = _buildButton(isDisabled);
+    
+    if (tooltip != null && !isDisabled) {
+      button = Tooltip(
+        message: tooltip!,
+        child: button,
       );
     }
+    
+    return button;
+  }
 
-    return SizedBox(
-      width: width,
-      height: height,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: effectiveBackgroundColor,
-          foregroundColor: effectiveTextColor,
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+  Widget _buildButton(bool isDisabled) {
+    if (isText) {
+      return _buildTextButton(isDisabled);
+    } else if (isOutlined) {
+      return _buildOutlinedButton(isDisabled);
+    } else {
+      return _buildFilledButton(isDisabled);
+    }
+  }
+
+  Widget _buildFilledButton(bool isDisabled) {
+    return Container(
+      width: fullWidth ? double.infinity : width,
+      height: height ?? AppSizes.buttonHeightMd,
+      decoration: BoxDecoration(
+        color: isDisabled 
+            ? AppColors.greyLight 
+            : (backgroundColor ?? AppColors.primary),
+        borderRadius: BorderRadius.circular(borderRadius ?? AppSizes.radiusMd),
+        boxShadow: isDisabled ? null : [
+          BoxShadow(
+            color: (backgroundColor ?? AppColors.primary).withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 24),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isDisabled ? null : onPressed,
+          borderRadius: BorderRadius.circular(borderRadius ?? AppSizes.radiusMd),
+          child: _buildButtonContent(),
         ),
-        child: _buildButtonContent(effectiveTextColor),
       ),
     );
   }
 
-  Widget _buildButtonContent(Color textColor) {
-    if (isLoading) {
+  Widget _buildOutlinedButton(bool isDisabled) {
+    return Container(
+      width: fullWidth ? double.infinity : width,
+      height: height ?? AppSizes.buttonHeightMd,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius ?? AppSizes.radiusMd),
+        border: Border.all(
+          color: isDisabled 
+              ? AppColors.greyLight 
+              : (borderColor ?? AppColors.primary),
+              width: 2,
+            ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isDisabled ? null : onPressed,
+          borderRadius: BorderRadius.circular(borderRadius ?? AppSizes.radiusMd),
+          child: _buildButtonContent(),
+        ),
+        ),
+      );
+    }
+
+  Widget _buildTextButton(bool isDisabled) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isDisabled ? null : onPressed,
+        borderRadius: BorderRadius.circular(borderRadius ?? AppSizes.radiusMd),
+        child: Container(
+          width: fullWidth ? double.infinity : width,
+          height: height ?? AppSizes.buttonHeightMd,
+          padding: padding ?? EdgeInsets.symmetric(
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
+          child: _buildButtonContent(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButtonContent() {
+    return Center(
+      child: isLoading 
+          ? _buildLoadingContent()
+          : _buildNormalContent(),
+    );
+  }
+
+  Widget _buildLoadingContent() {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -85,14 +156,19 @@ class CustomButton extends StatelessWidget {
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(textColor),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isOutlined || isText 
+                  ? (textColor ?? AppColors.primary)
+                  : Colors.white,
             ),
           ),
-          const SizedBox(width: 12),
+        ),
+        const SizedBox(width: AppSizes.sm),
           Text(
-            text,
-            style: AppTheme.bodyLarge.copyWith(
-              color: textColor,
+          'Loading...',
+          style: TextStyle(
+            color: _getTextColor(),
+            fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -100,56 +176,86 @@ class CustomButton extends StatelessWidget {
       );
     }
 
-    if (icon != null) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon!,
-          const SizedBox(width: 8),
-          Text(
+  Widget _buildNormalContent() {
+    final content = <Widget>[];
+    
+    if (icon != null && !iconTrailing) {
+      content.addAll([
+        Icon(
+          icon,
+          size: 20,
+          color: _getTextColor(),
+        ),
+        const SizedBox(width: AppSizes.sm),
+      ]);
+    }
+    
+    content.add(
+      Flexible(
+        child: Text(
             text,
-            style: AppTheme.bodyLarge.copyWith(
-              color: textColor,
+          style: TextStyle(
+            color: _getTextColor(),
+            fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
-          ),
-        ],
-      );
-    }
-
-    return Text(
-      text,
-      style: AppTheme.bodyLarge.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.w600,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
+    
+    if (icon != null && iconTrailing) {
+      content.addAll([
+        const SizedBox(width: AppSizes.sm),
+        Icon(
+          icon,
+          size: 20,
+          color: _getTextColor(),
+        ),
+      ]);
+    }
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: content,
+    );
+  }
+
+  Color _getTextColor() {
+    if (textColor != null) return textColor!;
+    
+    if (isOutlined) {
+      return AppColors.primary;
+    } else if (isText) {
+      return AppColors.primary;
+    } else {
+      return Colors.white;
+    }
   }
 }
 
-// ==================== SECONDARY BUTTON ====================
-
-class SecondaryButton extends StatelessWidget {
+// Specialized button variants
+class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
   final double? width;
-  final double height;
-  final double borderRadius;
-  final EdgeInsetsGeometry? padding;
-  final Widget? icon;
+  final double? height;
+  final IconData? icon;
+  final bool fullWidth;
 
-  const SecondaryButton({
-    super.key,
+  const PrimaryButton({
+    Key? key,
     required this.text,
     this.onPressed,
     this.isLoading = false,
     this.width,
-    this.height = 56,
-    this.borderRadius = 12,
-    this.padding,
+    this.height,
     this.icon,
-  });
+    this.fullWidth = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -157,53 +263,156 @@ class SecondaryButton extends StatelessWidget {
       text: text,
       onPressed: onPressed,
       isLoading: isLoading,
-      backgroundColor: AppTheme.surfaceColor,
-      textColor: AppTheme.textPrimaryColor,
+      backgroundColor: AppColors.primary,
       width: width,
       height: height,
-      borderRadius: borderRadius,
-      padding: padding,
       icon: icon,
+      fullWidth: fullWidth,
     );
   }
 }
 
-// ==================== TEXT BUTTON ====================
-
-class CustomTextButton extends StatelessWidget {
+class SecondaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
-  final Color? textColor;
-  final double? fontSize;
-  final FontWeight? fontWeight;
-  final EdgeInsetsGeometry? padding;
+  final bool isLoading;
+  final double? width;
+  final double? height;
+  final IconData? icon;
+  final bool fullWidth;
 
-  const CustomTextButton({
-    super.key,
+  const SecondaryButton({
+    Key? key,
     required this.text,
     this.onPressed,
-    this.textColor,
-    this.fontSize,
-    this.fontWeight,
-    this.padding,
-  });
+    this.isLoading = false,
+    this.width,
+    this.height,
+    this.icon,
+    this.fullWidth = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
+    return CustomButton(
+      text: text,
       onPressed: onPressed,
-      style: TextButton.styleFrom(
-        padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        foregroundColor: textColor ?? AppTheme.primaryColor,
-      ),
-      child: Text(
-        text,
-        style: AppTheme.bodyMedium.copyWith(
-          color: textColor ?? AppTheme.primaryColor,
-          fontSize: fontSize,
-          fontWeight: fontWeight ?? FontWeight.w500,
-        ),
-      ),
+      isLoading: isLoading,
+      isOutlined: true,
+      borderColor: AppColors.secondary,
+      textColor: AppColors.secondary,
+      width: width,
+      height: height,
+      icon: icon,
+      fullWidth: fullWidth,
+    );
+  }
+}
+
+class DangerButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final double? width;
+  final double? height;
+  final IconData? icon;
+  final bool fullWidth;
+
+  const DangerButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+    this.isLoading = false,
+    this.width,
+    this.height,
+    this.icon,
+    this.fullWidth = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomButton(
+      text: text,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      backgroundColor: AppColors.error,
+      width: width,
+      height: height,
+      icon: icon,
+      fullWidth: fullWidth,
+    );
+  }
+}
+
+class SuccessButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final double? width;
+  final double? height;
+  final IconData? icon;
+  final bool fullWidth;
+
+  const SuccessButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+    this.isLoading = false,
+    this.width,
+    this.height,
+    this.icon,
+    this.fullWidth = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomButton(
+      text: text,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      backgroundColor: AppColors.success,
+      width: width,
+      height: height,
+      icon: icon,
+      fullWidth: fullWidth,
+    );
+  }
+}
+
+class TextButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final Color? textColor;
+  final double? width;
+  final double? height;
+  final IconData? icon;
+  final bool fullWidth;
+
+  const TextButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+    this.isLoading = false,
+    this.textColor,
+    this.width,
+    this.height,
+    this.icon,
+    this.fullWidth = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomButton(
+      text: text,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      isText: true,
+      textColor: textColor ?? AppColors.primary,
+      width: width,
+      height: height,
+      icon: icon,
+      fullWidth: fullWidth,
     );
   }
 }

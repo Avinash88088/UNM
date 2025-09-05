@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +44,7 @@ class _ImageEditorScreenState extends State<ImageEditorScreen>
   double _brightness = 0.0;
   double _contrast = 1.0;
   CropShape _cropShape = CropShape.rectangle;
-  Rect? _cropArea;
+  ui.Rect? _cropArea;
 
   @override
   void initState() {
@@ -165,7 +165,7 @@ class _ImageEditorScreenState extends State<ImageEditorScreen>
             if (_isProcessing)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: const Center(
                     child: CircularProgressIndicator(
                       color: Colors.white,
@@ -1042,7 +1042,7 @@ class _ImageEditorScreenState extends State<ImageEditorScreen>
 
 // Custom painter for crop overlay
 class CropOverlayPainter extends CustomPainter {
-  final Rect cropArea;
+  final ui.Rect cropArea;
 
   CropOverlayPainter(this.cropArea);
 
@@ -1053,7 +1053,7 @@ class CropOverlayPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
-    final rect = Rect.fromLTWH(
+    final rect = ui.Rect.fromLTWH(
       cropArea.left,
       cropArea.top,
       cropArea.width,

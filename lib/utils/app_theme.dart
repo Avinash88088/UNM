@@ -20,6 +20,9 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFFFFFFF);
   static const Color cardColor = Color(0xFFFFFFFF);
   static const Color dividerColor = Color(0xFFE0E0E0);
+
+  // Helpers for new Color API to avoid withOpacity deprecation
+  static Color withOpacitySafe(Color c, double opacity) => c.withValues(alpha: opacity);
   
   // Text Colors
   static const Color textPrimaryColor = Color(0xFF212121);

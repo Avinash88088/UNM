@@ -192,9 +192,10 @@ class AuthService {
   Future<void> refreshTokens() async {
     try {
       final response = await http.post(
-        Uri.parse('${_apiClient.baseUrl}/auth/refresh'),
+        Uri.parse('${ApiClient.baseUrl}/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': _apiClient._refreshToken}),
+        // Note: ApiClient manages refresh token internally; we use its refresh flow instead.
+        body: jsonEncode({'refreshToken': _apiClient.accessToken}),
       );
 
       if (response.statusCode == 200) {

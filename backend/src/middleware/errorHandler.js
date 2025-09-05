@@ -177,6 +177,12 @@ const handleJWTExpiredError = () => {
     return new AppError('Token expired. Please log in again.', 401);
 };
 
+// Request timing middleware
+const requestTimer = (req, res, next) => {
+  req.startTime = Date.now();
+  next();
+};
+
 module.exports = {
     AppError,
     errorHandler,
@@ -186,5 +192,6 @@ module.exports = {
     handleCastError,
     handleDuplicateKeyError,
     handleJWTError,
-    handleJWTExpiredError
+    handleJWTExpiredError,
+    requestTimer
 };

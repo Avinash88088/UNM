@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'dart:async';
 import '../utils/constants.dart';
 import '../utils/app_theme.dart';
-import 'dart:async'; // Added for Timer
+import '../providers/app_provider.dart';
+import '../models/question_model.dart';
+import 'document_results_screen.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -18,6 +24,8 @@ class _UploadScreenState extends State<UploadScreen> {
   String? selectedLanguage;
   bool enableHandwritingRecognition = true;
   bool enableQuestionGeneration = false;
+  File? selectedFile;
+  String? selectedFileName;
 
   final List<String> languages = [
     'Auto-detect',
@@ -50,6 +58,10 @@ class _UploadScreenState extends State<UploadScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildUploadMethodsSection(),
+            if (selectedFile != null) ...[
+              const SizedBox(height: 16),
+              _buildSelectedFileSection(),
+            ],
             const SizedBox(height: 24),
             _buildCompressionProfileSection(),
             const SizedBox(height: 24),
@@ -127,6 +139,61 @@ class _UploadScreenState extends State<UploadScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSelectedFileSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.insert_drive_file,
+            color: AppTheme.primaryColor,
+            size: 32,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedFileName ?? 'Selected File',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ready for upload',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.primaryColor.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                selectedFile = null;
+                selectedFileName = null;
+              });
+            },
+            icon: const Icon(Icons.close),
+            color: AppTheme.primaryColor,
+          ),
+        ],
+      ),
     );
   }
 
@@ -540,9 +607,23 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  void _selectFile() {
-    // TODO: Implement file selection
-    _showFeatureComingSoon('File Selection');
+  void _selectFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          selectedFile = File(result.files.single.path!);
+          selectedFileName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      _showErrorDialog('File selection failed: $e');
+    }
   }
 
   void _captureImage() {
@@ -560,7 +641,12 @@ class _UploadScreenState extends State<UploadScreen> {
     _showFeatureComingSoon('Cloud Upload');
   }
 
-  void _startUpload() {
+  void _startUpload() async {
+    if (selectedFile == null) {
+      _showErrorDialog('Please select a file to upload');
+      return;
+    }
+
     if (selectedCompressionProfile == null) {
       _showErrorDialog('Please select a compression profile');
       return;
@@ -571,8 +657,34 @@ class _UploadScreenState extends State<UploadScreen> {
       uploadProgress = 0.0;
     });
 
-    // Simulate upload process
-    _simulateUpload();
+    try {
+      final appProvider = Provider.of<AppProvider>(context, listen: false);
+      
+      // Prepare features list
+      final features = <String>['ocr'];
+      if (enableHandwritingRecognition) features.add('hwr');
+      if (enableQuestionGeneration) features.add('question_generation');
+
+      // Upload document using backend service
+      await appProvider.uploadDocument(
+        filePath: selectedFile!.path,
+        title: selectedFileName ?? 'Document',
+        language: selectedLanguage,
+        features: features,
+        onProgress: (progress) {
+          setState(() {
+            uploadProgress = progress;
+          });
+        },
+      );
+
+      _uploadComplete();
+    } catch (e) {
+      _showErrorDialog('Upload failed: $e');
+      setState(() {
+        isUploading = false;
+      });
+    }
   }
 
   void _simulateUpload() {
@@ -603,7 +715,82 @@ class _UploadScreenState extends State<UploadScreen> {
       isUploading = false;
     });
 
-    _showSuccessDialog();
+    // Navigate to results screen with mock data
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentResultsScreen(
+          documentId: 'doc_${DateTime.now().millisecondsSinceEpoch}',
+          documentTitle: selectedFileName ?? 'Document',
+          extractedText: _getMockExtractedText(),
+          generatedQuestions: _getMockQuestions(),
+          summary: _getMockSummary(),
+        ),
+      ),
+    );
+  }
+
+  String _getMockExtractedText() {
+    return '''
+This is a sample document that has been processed using AI Document Master's OCR technology. The system successfully extracted text from the uploaded document and converted it into a digital format.
+
+Key features of the extracted content:
+- High accuracy text recognition
+- Multi-language support
+- Handwriting recognition capabilities
+- Table and form extraction
+- Document structure analysis
+
+The AI-powered system can process various document types including PDFs, images, and scanned documents. It provides intelligent text extraction with context awareness and formatting preservation.
+
+This mock text demonstrates the quality of OCR processing that users can expect from the AI Document Master system. The extracted content can be used for further processing, question generation, summarization, and analysis.
+    ''';
+  }
+
+  List<Question> _getMockQuestions() {
+    return [
+      Question(
+        id: 'q1',
+        documentId: 'doc_1',
+        questionText: 'What is the main purpose of AI Document Master?',
+        type: QuestionType.mcq,
+        difficulty: QuestionDifficulty.medium,
+        options: [
+          'Document storage',
+          'AI-powered document processing',
+          'File compression',
+          'Image editing'
+        ],
+        correctAnswer: 'AI-powered document processing',
+        createdAt: DateTime.now(),
+      ),
+      Question(
+        id: 'q2',
+        documentId: 'doc_1',
+        questionText: 'What types of documents can AI Document Master process?',
+        type: QuestionType.shortAnswer,
+        difficulty: QuestionDifficulty.easy,
+        options: [],
+        correctAnswer: 'PDFs, images, and scanned documents',
+        createdAt: DateTime.now(),
+      ),
+      Question(
+        id: 'q3',
+        documentId: 'doc_1',
+        questionText: 'Explain the key features of the OCR technology used in AI Document Master.',
+        type: QuestionType.longAnswer,
+        difficulty: QuestionDifficulty.hard,
+        options: [],
+        correctAnswer: 'High accuracy text recognition, multi-language support, handwriting recognition, table and form extraction, document structure analysis',
+        createdAt: DateTime.now(),
+      ),
+    ];
+  }
+
+  String _getMockSummary() {
+    return '''
+AI Document Master is an advanced document processing system that uses AI-powered OCR technology to extract text from various document types including PDFs, images, and scanned documents. The system offers high accuracy text recognition with multi-language support, handwriting recognition capabilities, and the ability to extract tables and forms while preserving document structure. The extracted content can be further processed for question generation, summarization, and analysis, making it a comprehensive solution for document digitization and management.
+    ''';
   }
 
   void _showFeatureComingSoon(String feature) {

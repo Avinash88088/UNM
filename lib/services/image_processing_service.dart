@@ -465,10 +465,10 @@ class ImageProcessingService {
 
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
-        final pixel = image.getPixel(x, y);
-        final r = img.getRed(pixel);
-        final g = img.getGreen(pixel);
-        final b = img.getBlue(pixel);
+        final p = image.getPixel(x, y);
+        final r = p.r;
+        final g = p.g;
+        final b = p.b;
         final brightness = (r + g + b) / 3;
         
         if (brightness < 200) { // Dark pixel (document content)

@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -11,13 +14,12 @@ const errorHandler = require('./middleware/errorHandler');
 const { handleUploadError } = require('./middleware/upload');
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const documentRoutes = require('./routes/documents');
-const aiRoutes = require('./routes/ai');
+const authRoutes = require('./routes/auth-simple');
+const documentRoutes = require('./routes/documents-simple');
+const aiRoutes = require('./routes/ai-simple');
 
 // Import services
-const { initializeDatabase } = require('./database/connection');
-const { initializeRedis } = require('./database/redis');
+const { initializeFirebaseAdmin } = require('./config/firebase-admin');
 const logger = require('./utils/logger');
 
 // Import Socket.io
@@ -202,13 +204,17 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // Initialize services and start server
 const startServer = async () => {
   try {
-    // Initialize database
-    await initializeDatabase();
-    logger.info('Database connected successfully');
-
-    // Initialize Redis
-    await initializeRedis();
-    logger.info('Redis connected successfully');
+    // Initialize Firebase Admin SDK (optional in development)
+    try {
+      await initializeFirebaseAdmin();
+      logger.info('Firebase Admin SDK initialized successfully');
+    } catch (firebaseError) {
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn('Firebase initialization failed, continuing in development mode');
+      } else {
+        throw firebaseError;
+      }
+    }
 
     // Start server
     const PORT = process.env.PORT || 3000;
@@ -217,6 +223,27 @@ const startServer = async () => {
       logger.info(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
       logger.info(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+      
+      // Log AI service status
+      if (process.env.GEMINI_API_KEY) {
+        logger.info('🔑 Gemini AI API: ✅ Configured');
+      } else {
+        logger.warn('🔑 Gemini AI API: ❌ Not configured');
+      }
+      
+      if (process.env.OPENAI_API_KEY) {
+        logger.info('🤖 OpenAI API: ✅ Configured');
+      } else {
+        logger.warn('🤖 OpenAI API: ❌ Not configured');
+      }
+      
+      if (process.env.GOOGLE_CLOUD_PROJECT_ID) {
+        logger.info('👁️ Google Cloud Vision: ✅ Configured');
+      } else {
+        logger.warn('👁️ Google Cloud Vision: ❌ Not configured');
+      }
+      
+      logger.info(`🔥 Firebase: ${process.env.NODE_ENV === 'development' ? '🟡 Development Mode' : '✅ Production Mode'}`);
     });
 
   } catch (error) {
